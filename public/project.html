@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="robots" content="noindex" />
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('id');
+      window.location.replace(id ? `/project/${id}${window.location.hash}` : '/work');
+    </script>
+  </head>
+  <body>
+    <a href="/work">Work</a>
+  </body>
+</html>
