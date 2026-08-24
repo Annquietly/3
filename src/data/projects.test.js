@@ -26,9 +26,17 @@ describe("project data helpers", () => {
   it("keeps featured projects in home order", () => {
     expect(getFeaturedProjects().map((project) => project.id)).toEqual([
       "Hello kitty",
-      "English & loveial-system",
+      "English & love",
       "Turandot",
       "Green light",
     ]);
+  });
+
+  it("uses optimized gallery media instead of GIF files", () => {
+    const galleryMedia = getProjectsByCategory("all").flatMap(
+      (project) => project.images,
+    );
+
+    expect(galleryMedia).not.toContainEqual(expect.stringMatching(/\.gif$/i));
   });
 });

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { usePrefersReducedMotion } from './usePrefersReducedMotion';
 
-export function useRevealOnScroll(forwardedRef) {
+export function useRevealOnScroll(forwardedRef, immediate = false) {
   const localRef = useRef(null);
   const [isVisible, setIsVisible] = useState(false);
   const reduceMotion = usePrefersReducedMotion();
@@ -16,6 +16,11 @@ export function useRevealOnScroll(forwardedRef) {
   useEffect(() => {
     const node = localRef.current;
     if (!node) return undefined;
+
+    if (immediate) {
+      const frame = window.requestAnimationFrame(() => setIsVisible(true));
+      return () => window.cancelAnimationFrame(frame);
+    }
 
     if (reduceMotion || !('IntersectionObserver' in window)) {
       setIsVisible(true);
@@ -33,7 +38,7 @@ export function useRevealOnScroll(forwardedRef) {
 
     observer.observe(node);
     return () => observer.disconnect();
-  }, [reduceMotion]);
+  }, [immediate, reduceMotion]);
 
   return { ref: setRef, isVisible };
 }

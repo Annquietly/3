@@ -4,10 +4,10 @@ import { cn } from '../../lib/cn';
 import { useRevealOnScroll } from '../../hooks/useRevealOnScroll';
 
 const Reveal = forwardRef(function Reveal(
-  { as: Component = 'div', delay = false, className, children, ...props },
+  { as: Component = 'div', delay = false, immediate = false, className, children, ...props },
   forwardedRef,
 ) {
-  const { ref, isVisible } = useRevealOnScroll(forwardedRef);
+  const { ref, isVisible } = useRevealOnScroll(forwardedRef, immediate);
 
   return (
     <Component

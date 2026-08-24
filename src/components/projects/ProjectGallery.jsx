@@ -3,14 +3,18 @@ import { useTranslation } from 'react-i18next';
 
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { usePrefersReducedMotion } from '../../hooks/usePrefersReducedMotion';
+import MediaLightbox from './MediaLightbox';
+import ProjectMedia from './ProjectMedia';
 
 export default function ProjectGallery({ project, title }) {
   const { t } = useTranslation('projects');
   const [imageIndex, setImageIndex] = useState(0);
   const [isChanging, setIsChanging] = useState(false);
-  const [cursor, setCursor] = useState({ x: 0, y: 0, leftSide: false });
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [cursor, setCursor] = useState({ x: 0, y: 0, action: 'next' });
   const frameRef = useRef(null);
   const touchStart = useRef(null);
+  const didSwipe = useRef(false);
   const reduceMotion = usePrefersReducedMotion();
   const finePointer = useMediaQuery('(pointer: fine)');
   const total = project.images.length;
@@ -36,35 +40,57 @@ export default function ProjectGallery({ project, title }) {
     const rectangle = frameRef.current?.getBoundingClientRect();
     if (!rectangle) return;
 
+    const relativeX = event.clientX - rectangle.left;
+    const ratio = relativeX / rectangle.width;
+
     setCursor({
-      x: event.clientX - rectangle.left,
+      x: relativeX,
       y: event.clientY - rectangle.top,
-      leftSide: event.clientX - rectangle.left < rectangle.width / 2,
+      action: ratio < 0.24 ? 'previous' : ratio > 0.76 ? 'next' : 'zoom',
     });
   };
 
   const onTouchStart = (event) => {
-    touchStart.current = event.touches[0]?.clientX ?? null;
+    const touch = event.touches[0];
+    touchStart.current = touch ? { x: touch.clientX, y: touch.clientY } : null;
+    didSwipe.current = false;
   };
 
   const onTouchEnd = (event) => {
     if (touchStart.current === null) return;
-    const end = event.changedTouches[0]?.clientX ?? touchStart.current;
-    const delta = end - touchStart.current;
+    const touch = event.changedTouches[0];
+    if (!touch) return;
+    const deltaX = touch.clientX - touchStart.current.x;
+    const deltaY = touch.clientY - touchStart.current.y;
     touchStart.current = null;
 
-    if (Math.abs(delta) > 36) {
-      if (delta > 0) previous();
+    if (Math.abs(deltaX) > 36 && Math.abs(deltaX) > Math.abs(deltaY)) {
+      didSwipe.current = true;
+      if (deltaX > 0) previous();
       else next();
     }
   };
 
   const onFrameClick = (event) => {
+    if (didSwipe.current) {
+      didSwipe.current = false;
+      return;
+    }
+
     const rectangle = frameRef.current?.getBoundingClientRect();
     if (!rectangle) return;
-    if (event.clientX - rectangle.left < rectangle.width / 2) previous();
-    else next();
+    if (!finePointer) {
+      setIsLightboxOpen(true);
+      return;
+    }
+
+    const ratio = (event.clientX - rectangle.left) / rectangle.width;
+    if (ratio < 0.24) previous();
+    else if (ratio > 0.76) next();
+    else setIsLightboxOpen(true);
   };
+
+  const mediaAlt = t('galleryImageAlt', { title, current: imageIndex + 1 });
 
   return (
     <section className="px-page" aria-label={t('galleryAria', { title })}>
@@ -76,24 +102,38 @@ export default function ProjectGallery({ project, title }) {
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
-        <img
+        <ProjectMedia
           src={project.images[imageIndex]}
-          alt={t('galleryImageAlt', { title, current: imageIndex + 1 })}
+          alt={mediaAlt}
           className={`gallery-image max-h-[min(78svh,820px)] w-full object-contain transition duration-500 ease-smooth ${
             isChanging ? 'is-changing' : ''
           }`}
+          draggable="false"
         />
         <span
           className="gallery-cursor"
           style={{ left: cursor.x, top: cursor.y }}
           aria-hidden="true"
         >
-          {cursor.leftSide ? '←' : '→'}
+          {cursor.action === 'previous' ? '←' : cursor.action === 'next' ? '→' : '↗'}
         </span>
       </div>
       <p className="m-0 mt-3.5 text-center text-[13px] text-muted">
         {t('imageCounter', { current: imageIndex + 1, total })}
       </p>
+      {isLightboxOpen && (
+        <MediaLightbox
+          key={project.images[imageIndex]}
+          src={project.images[imageIndex]}
+          alt={mediaAlt}
+          closeLabel={t('closeMedia')}
+          previousLabel={t('previousImage')}
+          nextLabel={t('nextImage')}
+          onClose={() => setIsLightboxOpen(false)}
+          onPrevious={previous}
+          onNext={next}
+        />
+      )}
     </section>
   );
 }

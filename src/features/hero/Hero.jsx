@@ -15,7 +15,7 @@ export default function Hero() {
       id="home"
     >
       <HeroParallax />
-      <Reveal className="relative z-[2] mb-20 max-w-[min(100%,1060px)] self-center select-none max-[900px]:mb-[clamp(34px,7vw,56px)] max-[900px]:self-start">
+      <Reveal immediate className="relative z-[2] mb-20 max-w-[min(100%,1060px)] self-center select-none max-[900px]:mb-[clamp(34px,7vw,56px)] max-[900px]:self-start">
         <p className="eyebrow mb-5">{t('eyebrow')}</p>
         <VariableProximityText
           ariaLabel={t('titleAria')}
